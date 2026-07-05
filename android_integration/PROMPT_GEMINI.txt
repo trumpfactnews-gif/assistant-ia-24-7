@@ -1,0 +1,65 @@
+==================================================================
+PROMPT À COPIER-COLLER DANS GEMINI BUILDER (AI STUDIO)
+Projet : SEC Analyst Pro  —  Intégration du moteur quantitatif local réel
+==================================================================
+
+Bonjour. Je veux améliorer l'onglet « Quantique » de mon application Android
+(SEC Analyst Pro, Kotlin + Jetpack Compose).
+
+CONTEXTE
+--------
+Aujourd'hui, quand le serveur VPS et l'API Gemini sont injoignables, l'onglet
+Quantique retombe sur une SIMULATION à biais codés en dur (ex : PLTR = +1.8,
+MARA = -1.2). Ces chiffres n'ont aucune valeur analytique.
+
+Je veux le remplacer par un VRAI moteur de calcul quantitatif qui tourne sur
+l'appareil, à partir de 5 ans de données de marché réelles (OHLCV via l'API
+Yahoo Finance). Ce moteur combine : analogues historiques par régime de marché,
+régression logistique (entraînée par descente de gradient sur les indicateurs
+techniques), et simulation Monte Carlo. Aucun biais codé en dur, aucune
+génération par IA.
+
+CE QUE TU DOIS FAIRE (exactement 4 opérations, ne modifie rien d'autre)
+----------------------------------------------------------------------
+1) AJOUTE un nouveau fichier :
+   app/src/main/java/com/example/service/QuantEngine.kt
+   (fourni dans le dossier). C'est du Kotlin pur, aucune dépendance nouvelle.
+
+2) AJOUTE un nouveau fichier :
+   app/src/main/java/com/example/data/repository/PriceHistoryRepository.kt
+   (fourni). Il réutilise OkHttp et org.json, déjà présents dans le projet.
+
+3) REMPLACE INTÉGRALEMENT le fichier existant :
+   app/src/main/java/com/example/service/QuantumService.kt
+   par la version fournie. Elle garde EXACTEMENT la même API publique
+   (suspend fun getPredictions(ticker: String): List<QuantumPrediction>) et le
+   même modèle de données QuantumPrediction. Elle ajoute seulement le moteur
+   local comme source prioritaire ; le VPS, Gemini et la simulation restent des
+   solutions de secours, dans cet ordre.
+
+4) REMPLACE INTÉGRALEMENT le fichier existant :
+   app/src/main/java/com/example/ui/screens/QuantumScreen.kt
+   par la version fournie. Les seules différences par rapport à ta version
+   actuelle : l'affichage de la nouvelle provenance "LOCAL_REAL_QUANT" (une carte
+   verte + libellés honnêtes), un badge de fraîcheur neutre, et une carte
+   méthodologique conditionnée à la source. Aucun changement de structure de
+   navigation.
+
+CONTRAINTES IMPORTANTES
+-----------------------
+- Ne modifie PAS le modèle QuantumPrediction (data/model/QuantumPrediction.kt).
+- Ne modifie PAS le schéma de la base Room (AppDatabase / QuantumDao).
+- Ne touche PAS aux autres écrans (Watchlist, Scanner SEC, Calendrier, Notation).
+- La permission INTERNET est déjà présente dans le manifest : ne la retire pas.
+- Après intégration, l'application doit compiler sans erreur et se lancer.
+
+RÉSULTAT ATTENDU
+----------------
+Dans l'onglet Quantique, pour n'importe quel ticker, les probabilités (bins,
+distribution, rendement attendu, intervalle de confiance) doivent maintenant
+être calculées localement à partir des données réelles, avec un badge vert
+« MOTEUR QUANTITATIF LOCAL – CALCUL RÉEL (OHLCV 5 ANS) ». Si la récupération des
+données échoue, l'app retombe proprement sur le VPS, puis Gemini, puis la
+simulation.
+
+Confirme-moi les 4 fichiers modifiés/ajoutés, puis compile.
