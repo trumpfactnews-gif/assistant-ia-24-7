@@ -1,0 +1,66 @@
+--- app/src/main/java/com/example/ui/screens/QuantumScreen.kt	2026-07-05 23:01:30.000000000 +0000
++++ /tmp/claude-0/-home-user-assistant-ia-24-7/8e4202f4-6e36-5b4b-a417-8230f78f3e3e/scratchpad/secapp/app/src/main/java/com/example/ui/screens/QuantumScreen.kt	2026-07-05 23:14:38.127640674 +0000
+@@ -335,6 +335,47 @@
+                             }
+                         }
+                     }
++                    "LOCAL_REAL_QUANT" -> {
++                        // Emerald card: real on-device quantitative engine
++                        Card(
++                            colors = CardDefaults.cardColors(containerColor = Color(0xFF064E3B)),
++                            border = BorderStroke(1.dp, Color(0xFF10B981)),
++                            modifier = Modifier.fillMaxWidth()
++                        ) {
++                            Column(
++                                modifier = Modifier.padding(14.dp).fillMaxWidth(),
++                                horizontalAlignment = Alignment.CenterHorizontally,
++                                verticalArrangement = Arrangement.spacedBy(6.dp)
++                            ) {
++                                Row(
++                                    verticalAlignment = Alignment.CenterVertically,
++                                    horizontalArrangement = Arrangement.Center
++                                ) {
++                                    Box(
++                                        modifier = Modifier
++                                            .size(10.dp)
++                                            .clip(RoundedCornerShape(5.dp))
++                                            .background(Color(0xFF34D399))
++                                    )
++                                    Spacer(modifier = Modifier.width(8.dp))
++                                    Text(
++                                        text = "MOTEUR QUANTITATIF LOCAL – CALCUL RÉEL (OHLCV 5 ANS)",
++                                        fontSize = 11.sp,
++                                        fontWeight = FontWeight.Black,
++                                        color = Color(0xFFD1FAE5),
++                                        letterSpacing = 0.5.sp
++                                    )
++                                }
++                                Text(
++                                    text = "Prédictions calculées sur l'appareil à partir de 5 ans de données réelles : analogues historiques, régression logistique et Monte Carlo. Aucun biais codé en dur, aucune génération par IA.",
++                                    fontSize = 11.sp,
++                                    color = Color(0xFFA7F3D0),
++                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
++                                    lineHeight = 16.sp
++                                )
++                            }
++                        }
++                    }
+                 }
+ 
+                 // Sourcing Checklist Card
+@@ -370,6 +411,7 @@
+                                     text = when (provenance) {
+                                         "LOCAL_SIMULATED" -> "MODÈLE DE SECOURS (SIMULÉ HORS-LIGNE)"
+                                         "GEMINI_GENERATED" -> "INFÉRENCE IA DISTANTE (GEMINI 3.5 FLASH)"
++                                        "LOCAL_REAL_QUANT" -> "CALCUL LOCAL RÉEL (OHLCV 5 ANS)"
+                                         else -> "SERVEUR API DISTANT (RÉEL VPS)"
+                                     },
+                                     fontSize = 8.sp,
+@@ -408,6 +450,7 @@
+                         text = when (provenance) {
+                             "LOCAL_SIMULATED" -> "Basé sur 10 000 états historiques simulés (VAE + FAISS local)"
+                             "GEMINI_GENERATED" -> "Génération probabiliste par grand modèle de langage (${currentPrediction.nNeighbors} voisins textuels)"
++                            "LOCAL_REAL_QUANT" -> "Basé sur ${currentPrediction.nNeighbors} états historiques analogues réels (données 5 ans, calcul local)"
+                             else -> "Basé sur ${currentPrediction.nNeighbors} états historiques identiques (2016–2026)"
+                         },
+                         style = MaterialTheme.typography.bodySmall,
