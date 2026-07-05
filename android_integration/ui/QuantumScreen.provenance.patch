@@ -1,5 +1,5 @@
 --- orig/app/src/main/java/com/example/ui/screens/QuantumScreen.kt	2026-07-05 23:01:30.000000000 +0000
-+++ /tmp/claude-0/-home-user-assistant-ia-24-7/8e4202f4-6e36-5b4b-a417-8230f78f3e3e/scratchpad/secapp/app/src/main/java/com/example/ui/screens/QuantumScreen.kt	2026-07-05 23:33:40.303614550 +0000
++++ /tmp/claude-0/-home-user-assistant-ia-24-7/8e4202f4-6e36-5b4b-a417-8230f78f3e3e/scratchpad/secapp/app/src/main/java/com/example/ui/screens/QuantumScreen.kt	2026-07-05 23:37:45.559608940 +0000
 @@ -335,6 +335,47 @@
                              }
                          }
@@ -64,7 +64,63 @@
                              else -> "Basé sur ${currentPrediction.nNeighbors} états historiques identiques (2016–2026)"
                          },
                          style = MaterialTheme.typography.bodySmall,
-@@ -720,7 +763,7 @@
+@@ -645,26 +688,39 @@
+                         verticalArrangement = Arrangement.spacedBy(8.dp)
+                     ) {
+                         Text(
+-                            "Informations de Calcul & VAE",
++                            when (provenance) {
++                                "LOCAL_REAL_QUANT" -> "Informations de Calcul"
++                                else -> "Informations de Calcul & VAE"
++                            },
+                             style = MaterialTheme.typography.labelSmall,
+                             fontWeight = FontWeight.Bold,
+                             color = MaterialTheme.colorScheme.secondary
+                         )
+-                        Text(
+-                            "• Encodeur VAE : Réduction de 128 dimensions brutes de marché vers un espace latent compact en 64 dimensions.",
+-                            style = MaterialTheme.typography.bodySmall,
+-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+-                        )
+-                        Text(
+-                            "• Recherche HNSW : Recherche des voisins les plus proches effectuée dans l'index FAISS de 50 millions d'états.",
+-                            style = MaterialTheme.typography.bodySmall,
+-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+-                        )
+-                        Text(
+-                            "• Non-Subjectivité : Aucune opinion qualitative ou IA n'est appliquée ici. Ces pourcentages reflètent purement les occurrences d'évolution empirique observées dans le passé historique (2016–2026).",
+-                            style = MaterialTheme.typography.bodySmall,
+-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+-                        )
++                        // Méthodologie affichée selon la provenance réelle (honnêteté).
++                        val methodoLines = when (provenance) {
++                            "LOCAL_REAL_QUANT" -> listOf(
++                                "• Analogues de régime : rendements des jours passés partageant la même tendance, la même volatilité et la même zone RSI que le jour courant.",
++                                "• Régression logistique + Monte Carlo : direction estimée par un modèle entraîné sur les indicateurs (RSI, MACD, Bollinger, EMA, ATR), complétée par un bootstrap des rendements réels.",
++                                "• Non-Subjectivité : aucune opinion ni IA générative. Les pourcentages reflètent des occurrences empiriques réelles sur 5 ans d'OHLCV."
++                            )
++                            "GEMINI_GENERATED" -> listOf(
++                                "• Génération par IA : distribution estimée par le modèle Gemini à partir de l'historique et du contexte du marché.",
++                                "• Fallback : le moteur local et le serveur quantitatif principal étaient injoignables.",
++                                "• Prudence : sortie d'un grand modèle de langage, à recouper avec d'autres sources."
++                            )
++                            else -> listOf(
++                                "• Encodeur VAE : Réduction de 128 dimensions brutes de marché vers un espace latent compact en 64 dimensions.",
++                                "• Recherche HNSW : Recherche des voisins les plus proches effectuée dans l'index FAISS de 50 millions d'états.",
++                                "• Non-Subjectivité : Aucune opinion qualitative ou IA n'est appliquée ici. Ces pourcentages reflètent purement les occurrences d'évolution empirique observées dans le passé historique (2016–2026)."
++                            )
++                        }
++                        methodoLines.forEach { line ->
++                            Text(
++                                line,
++                                style = MaterialTheme.typography.bodySmall,
++                                color = MaterialTheme.colorScheme.onSurfaceVariant
++                            )
++                        }
+                     }
+                 }
+ 
+@@ -720,7 +776,7 @@
          modifier = modifier
      ) {
          Text(
