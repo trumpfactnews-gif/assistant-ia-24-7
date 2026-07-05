@@ -86,18 +86,21 @@ class PriceHistoryRepository {
             val l = lows?.optDouble(i, rawClose) ?: rawClose
             val v = volumes?.optDouble(i, 0.0) ?: 0.0
 
-            // Facteur d'ajustement split = adjClose / close (1.0 si indisponible).
-            val adj = adjClose?.optDouble(i, rawClose) ?: rawClose
-            val factor = if (rawClose != 0.0 && !adj.isNaN() && adj > 0.0) adj / rawClose else 1.0
+            // Clôture ajustée des splits (adjClose) ; repli sur rawClose (déjà
+            // garanti > 0) si adjClose est absent, NaN ou non positif.
+            val adjRaw = adjClose?.optDouble(i, rawClose) ?: rawClose
+            val adj = if (adjRaw.isNaN() || adjRaw <= 0.0) rawClose else adjRaw
+            // Facteur d'ajustement split = adjClose / close.
+            val factor = adj / rawClose
 
             bars.add(
                 QuantEngine.OhlcvBar(
                     time = timestamps.optLong(i, 0L),
-                    open = if (o.isNaN()) adj else o * factor,
-                    high = if (h.isNaN()) adj else h * factor,
-                    low = if (l.isNaN()) adj else l * factor,
+                    open = if (o.isNaN() || o <= 0.0) adj else o * factor,
+                    high = if (h.isNaN() || h <= 0.0) adj else h * factor,
+                    low = if (l.isNaN() || l <= 0.0) adj else l * factor,
                     close = adj,
-                    volume = if (v.isNaN()) 0.0 else v
+                    volume = if (v.isNaN() || v < 0.0) 0.0 else v
                 )
             )
         }
