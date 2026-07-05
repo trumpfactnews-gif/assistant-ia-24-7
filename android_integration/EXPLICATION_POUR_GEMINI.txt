@@ -1,0 +1,67 @@
+==================================================================
+MESSAGE D'INTRODUCTION À DONNER À GEMINI BUILDER (à coller EN PREMIER)
+==================================================================
+
+Salut Gemini. Je vais te confier une tâche d'intégration sur mon app Android
+existante « SEC Analyst Pro » (Kotlin + Jetpack Compose). Avant les détails
+techniques, voici À QUOI ÇA SERT et COMMENT ON VA PROCÉDER.
+
+------------------------------------------------------------------
+1) À QUOI SERT CE QUE JE VAIS TE DEMANDER
+------------------------------------------------------------------
+Mon app a un onglet « Quantique » qui affiche des probabilités de mouvement de
+prix par horizon (1min, 5min, 30min, 1 jour, 5 jours). Problème : quand mes
+serveurs sont injoignables, cet onglet retombe sur une SIMULATION bidon, avec
+des chiffres codés en dur dans le code (ex : PLTR = +1.8, MARA = -1.2). Ça n'a
+aucune valeur : ce ne sont pas de vrais calculs.
+
+Le but de cette intégration : remplacer ce faux par un VRAI moteur de calcul
+quantitatif qui s'exécute sur le téléphone, à partir de 5 ans de données de
+marché réelles (OHLCV téléchargées depuis l'API Yahoo Finance). Ce moteur
+calcule les probabilités par trois méthodes combinées :
+  - analogues historiques (les jours passés dans le même régime de marché) ;
+  - régression logistique entraînée sur des indicateurs (RSI, MACD, Bollinger,
+    EMA, ATR) ;
+  - simulation Monte Carlo.
+Aucun biais codé en dur, aucune génération de chiffres par une IA.
+
+------------------------------------------------------------------
+2) CE QUE TU VAS RECEVOIR
+------------------------------------------------------------------
+Je vais te fournir un dossier contenant 4 fichiers Kotlin, déjà rangés selon
+l'arborescence exacte de mon projet :
+  - 2 fichiers NOUVEAUX à ajouter (le moteur + la récupération de données) ;
+  - 2 fichiers EXISTANTS à remplacer par les versions fournies (le service de
+    prédiction + l'écran d'affichage).
+Ces fichiers ont déjà été écrits et testés. Ton rôle n'est PAS de les réécrire,
+mais de les INTÉGRER proprement dans le projet et de vérifier que tout compile.
+
+------------------------------------------------------------------
+3) COMMENT ON MET ÇA EN PLACE (étapes)
+------------------------------------------------------------------
+Étape 1 : confirme que tu as bien accès à mon projet SEC Analyst Pro dans ce
+          builder (tu dois voir les fichiers sous app/src/main/java/com/example/).
+Étape 2 : je te donne les 4 fichiers. Place chacun à son chemin indiqué :
+            app/src/main/java/com/example/service/QuantEngine.kt            (ajout)
+            app/src/main/java/com/example/data/repository/PriceHistoryRepository.kt (ajout)
+            app/src/main/java/com/example/service/QuantumService.kt         (remplace)
+            app/src/main/java/com/example/ui/screens/QuantumScreen.kt       (remplace)
+Étape 3 : ne modifie AUCUN autre fichier. En particulier, ne change pas le
+          modèle QuantumPrediction, la base Room, ni les autres écrans.
+Étape 4 : compile le projet. S'il y a une erreur de compilation, montre-la-moi
+          et corrige uniquement ce qui est nécessaire pour compiler, sans
+          altérer la logique du moteur.
+Étape 5 : quand ça compile, confirme-moi la liste des 4 fichiers modifiés/ajoutés
+          et lance l'app pour que je vérifie l'onglet Quantique.
+
+------------------------------------------------------------------
+4) COMMENT SAVOIR QUE C'EST RÉUSSI
+------------------------------------------------------------------
+Dans l'onglet Quantique, pour n'importe quel ticker (ex : PLTR, AAPL), un badge
+vert doit apparaître : « MOTEUR QUANTITATIF LOCAL – CALCUL RÉEL (OHLCV 5 ANS) ».
+Les probabilités affichées sont alors calculées à partir des vraies données. Si
+le téléchargement des données échoue, l'app retombe proprement sur mes serveurs
+(VPS), puis sur Gemini, puis sur la simulation — dans cet ordre.
+
+Dis-moi quand tu es prêt, et je t'envoie le prompt technique détaillé + les
+4 fichiers.
