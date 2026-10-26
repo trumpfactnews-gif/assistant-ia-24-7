@@ -14,3 +14,6 @@ analysis.png
 .DS_Store
 .idea/
 .vscode/
+
+# Day Trader skill runtime data (watchlists, plans, orders, config with SEC user agent)
+trader/
