@@ -1,0 +1,138 @@
+//@version=6
+// Day Trader ORB: the trader-entry / trader-exit / trader-budget / trader-risk
+// rules from the Day Trader skill pack, as a TradingView strategy.
+// Use on a 1- or 5-minute chart of a US stock, regular hours.
+strategy("Day Trader ORB", shorttitle="DT-ORB", overlay=true,
+     initial_capital=5000, currency=currency.USD,
+     process_orders_on_close=false, calc_on_every_tick=false,
+     commission_type=strategy.commission.cash_per_order, commission_value=0,
+     slippage=0, max_labels_count=500)
+
+const string TZ = "America/New_York"
+
+// ---------- inputs ----------
+grpSetup = "Setup (trader-entry / trader-exit)"
+orMinutes = input.int(15, "Opening range (minutes)", minval=1, group=grpSetup)
+stopMode  = input.string("OR mid", "Stop", options=["OR mid", "OR low", "% below entry"], group=grpSetup)
+stopPct   = input.float(1.0, "Stop % below entry (% mode)", minval=0.1, step=0.1, group=grpSetup)
+targetR   = input.float(2.0, "Target (multiple of R)", minval=0.5, step=0.5, group=grpSetup)
+useVolume = input.bool(false, "Volume check: breakout bar > average OR bar", group=grpSetup)
+
+grpTime = "Hours, New York time (trader-risk)"
+entryStartStr = input.string("09:45", "No entries before", group=grpTime)
+entryEndStr   = input.string("15:30", "No entries after", group=grpTime)
+flatByStr     = input.string("15:55", "Flat by", group=grpTime)
+
+grpMoney = "Budget (trader-budget / trader-risk)"
+budget      = input.float(5000, "Account budget ($)", minval=1, group=grpMoney)
+maxLoss     = input.float(50, "Max loss per trade ($)", minval=1, group=grpMoney)
+cashBuffer  = input.float(10, "Cash buffer (%)", minval=0, maxval=100, group=grpMoney)
+maxPosPct   = input.float(75, "Max position (% of budget)", minval=1, maxval=100, group=grpMoney)
+maxOrderUsd = input.float(4000, "Max order ($)", minval=1, group=grpMoney)
+minRR       = input.float(1.0, "Min reward:risk", minval=0, step=0.1, group=grpMoney)
+
+// ---------- helpers ----------
+toMinutes(string s) =>
+    parts = str.split(s, ":")
+    int(str.tonumber(array.get(parts, 0))) * 60 + int(str.tonumber(array.get(parts, 1)))
+
+hhmm(int m) =>
+    h  = int(m / 60)
+    mm = m % 60
+    (h < 10 ? "0" : "") + str.tostring(h) + (mm < 10 ? "0" : "") + str.tostring(mm)
+
+entryStart = toMinutes(entryStartStr)
+entryEnd   = toMinutes(entryEndStr)
+flatBy     = toMinutes(flatByStr)
+orSession  = "0930-" + hhmm(9 * 60 + 30 + orMinutes)
+
+if not timeframe.isintraday or timeframe.in_seconds() > orMinutes * 60 or (orMinutes * 60) % timeframe.in_seconds() != 0
+    runtime.error("Use a 1- or 5-minute chart that divides the opening range evenly.")
+
+// ---------- opening range ----------
+inOR     = not na(time(timeframe.period, orSession, TZ))
+nyDay    = dayofmonth(time, TZ)
+newDay   = nyDay != nyDay[1]
+closeMin = hour(time_close, TZ) * 60 + minute(time_close, TZ)
+
+var float orHigh     = na
+var float orLow      = na
+var float orVol      = 0.0
+var int   orBars     = 0
+var bool  firedToday = false
+var float stopPx     = na
+var float targetPx   = na
+
+if newDay
+    orHigh     := na
+    orLow      := na
+    orVol      := 0.0
+    orBars     := 0
+    firedToday := false
+
+if inOR
+    orHigh := na(orHigh) ? high : math.max(orHigh, high)
+    orLow  := na(orLow) ? low : math.min(orLow, low)
+    orVol  += volume
+    orBars += 1
+
+orDone = not inOR and not na(orHigh)
+orMid  = (orHigh + orLow) / 2
+
+// ---------- entry: first completed bar that closes above the range ----------
+volOk    = not useVolume or (orBars > 0 and volume > orVol / orBars)
+inWindow = closeMin >= entryStart and closeMin <= entryEnd
+breakout = orDone and not firedToday and barstate.isconfirmed and close > orHigh and volOk
+
+if breakout
+    firedToday := true
+    entry = close
+    stop  = stopMode == "OR mid" ? orMid : stopMode == "OR low" ? orLow : entry * (1 - stopPct / 100)
+    stop := math.floor(stop * 100) / 100
+    risk   = entry - stop
+    target = math.round((entry + targetR * risk) * 100) / 100
+    cap    = math.min(budget * (1 - cashBuffer / 100), budget * maxPosPct / 100, maxOrderUsd)
+    qty    = risk > 0 ? math.min(math.floor(maxLoss / risk), math.floor(cap / entry)) : 0
+
+    string why = na
+    if not inWindow
+        why := "outside entry window"
+    else if strategy.position_size != 0
+        why := "already in a position"
+    else if risk <= 0
+        why := "stop at or above entry"
+    else if targetR < minRR
+        why := "reward:risk below minimum"
+    else if qty < 1
+        why := "stop too far for max loss"
+
+    if na(why)
+        stopPx   := stop
+        targetPx := target
+        order = '{"ticker":"' + syminfo.ticker + '","side":"buy","qty":' + str.tostring(qty) +
+             ',"entry":' + str.tostring(entry, "#.##") + ',"stop":' + str.tostring(stop, "#.##") +
+             ',"target":' + str.tostring(target, "#.##") + '}'
+        strategy.entry("ORB", strategy.long, qty=qty, comment="ORB", alert_message=order)
+        strategy.exit("ORB exit", "ORB", stop=stop, limit=target, comment_loss="Stop", comment_profit="Target",
+             alert_message='{"ticker":"' + syminfo.ticker + '","side":"sell","qty":' + str.tostring(qty) + ',"reason":"stop/target"}')
+        label.new(bar_index, low, "BUY " + str.tostring(qty) + " @ " + str.tostring(entry, "#.##") +
+             "\nStop " + str.tostring(stop, "#.##") + "  Target " + str.tostring(target, "#.##") +
+             "\nMax loss $" + str.tostring(qty * risk, "#.##"),
+             style=label.style_label_up, color=color.teal, textcolor=color.white, size=size.small)
+    else
+        label.new(bar_index, high, "BLOCK: " + why, style=label.style_label_down, color=color.gray,
+             textcolor=color.white, size=size.small)
+        alert(syminfo.ticker + " ORB BLOCK: " + why, alert.freq_once_per_bar_close)
+
+// ---------- flat by the close, win or lose ----------
+if strategy.position_size > 0 and closeMin >= flatBy
+    strategy.close_all(comment="Flat " + flatByStr,
+         alert_message='{"ticker":"' + syminfo.ticker + '","side":"sell","qty":"all","reason":"flat by close"}')
+
+// ---------- chart ----------
+plot(orHigh, "OR high", color=color.teal, style=plot.style_linebr, linewidth=2)
+plot(orLow, "OR low", color=color.red, style=plot.style_linebr, linewidth=2)
+plot(orMid, "OR mid", color=color.gray, style=plot.style_linebr)
+plot(strategy.position_size > 0 ? stopPx : na, "Stop", color=color.red, style=plot.style_linebr)
+plot(strategy.position_size > 0 ? targetPx : na, "Target", color=color.green, style=plot.style_linebr)
+bgcolor(inOR ? color.new(color.blue, 90) : na, title="Opening range")
